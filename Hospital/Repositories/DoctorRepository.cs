@@ -17,9 +17,7 @@ public class DoctorRepository : IDoctorRepository
     {
         using var connection = new SqlConnection(_configuration["ConnectionStrings:DefaultConnection"]);
         connection.Open();
-        using var command = new SqlCommand();
-        command.Connection = connection;
-        command.CommandText = $"SELECT * FROM Medicament WHERE IdMedicament = {id}";
+        using var command = new SqlCommand($"SELECT * FROM Medicament WHERE IdMedicament = {id}", connection);
         var dr = command.ExecuteReader();
         Medicament medicament = new Medicament();
         while (dr.Read())
@@ -28,7 +26,6 @@ public class DoctorRepository : IDoctorRepository
             medicament.Description = dr["Description"].ToString() ?? "";
             medicament.Type = dr["Type"].ToString() ?? "";
         }
-
         return medicament;
     }
 
@@ -36,9 +33,7 @@ public class DoctorRepository : IDoctorRepository
     {
         using var connection = new SqlConnection(_configuration["ConnectionStrings:DefaultConnection"]);
         connection.Open();
-        using var command = new SqlCommand();
-        command.Connection = connection;
-        command.CommandText = $"SELECT * FROM Prescription_Medicament WHERE IdPrescription = {id}";
+        using var command = new SqlCommand($"SELECT * FROM Prescription_Medicament WHERE IdPrescription = {id}", connection);
         var dr = command.ExecuteReader();
         List<Usage> usages = new List<Usage>();
         while (dr.Read())
@@ -46,7 +41,7 @@ public class DoctorRepository : IDoctorRepository
             Usage usage = new Usage
             {
                 Medicament = GetMedicament((int) dr["IdMedicament"]),
-                Dose = (int)dr["Dose"],
+                Dose = (int) dr["Dose"],
                 Details = dr["Details"].ToString() ?? ""
             };
             usages.Add(usage);
@@ -59,9 +54,7 @@ public class DoctorRepository : IDoctorRepository
     {
         using var connection = new SqlConnection(_configuration["ConnectionStrings:DefaultConnection"]);
         connection.Open();
-        using var command = new SqlCommand();
-        command.Connection = connection;
-        command.CommandText = $"SELECT * FROM Patient WHERE IdPatient = {id}";
+        using var command = new SqlCommand($"SELECT * FROM Patient WHERE IdPatient = {id}", connection);
         var dr = command.ExecuteReader();
         Patient patient = new Patient();
         while (dr.Read())
@@ -69,11 +62,8 @@ public class DoctorRepository : IDoctorRepository
             patient.Name = dr["FirstName"].ToString() ?? "";
             patient.Surname = dr["LastName"].ToString() ?? "";
             patient.DateOfBirth = (DateTime)dr["Birthdate"];
-            
-            return patient;
         }
-
-        return null!;
+        return patient;
     }
 
     private List<Prescription> GetPrescriptions(int id)
@@ -120,14 +110,15 @@ public class DoctorRepository : IDoctorRepository
         return doctor;
     }
 
-    private int DeleteUsages(int id)
+    private int DeleteUsage(int id)
     {
         using var connection = new SqlConnection(_configuration["ConnectionStrings:DefaultConnection"]);
         connection.Open();
         using var command = new SqlCommand($"DELETE FROM Prescription_Medicament WHERE IdPrescription = {id}", connection);
         return command.ExecuteNonQuery();
     }
-    private int DeletePrescriptions(int id)
+    
+    private int DeleteUsages(int id)
     {
         using var connection = new SqlConnection(_configuration["ConnectionStrings:DefaultConnection"]);
         connection.Open();
@@ -136,7 +127,7 @@ public class DoctorRepository : IDoctorRepository
         int sum = 0;
         while (dr.Read())
         {
-            sum += DeleteUsages((int)dr["IdPrescription"]);
+            sum += DeleteUsage((int)dr["IdPrescription"]);
         }
 
         return sum;
@@ -146,9 +137,9 @@ public class DoctorRepository : IDoctorRepository
     {
         using var connection = new SqlConnection(_configuration["ConnectionStrings:DefaultConnection"]);
         connection.Open();
-        int del = DeletePrescriptions(id);
-        using var command2 = new SqlCommand($"DELETE FROM Prescription WHERE IdDoctor = {id}", connection);
-        using var command1 = new SqlCommand($"DELETE FROM DOCTOR WHERE IdDoctor = {id}", connection);
-        return command2.ExecuteNonQuery() + command1.ExecuteNonQuery() + del;
+        int del = DeleteUsages(id);
+        using var deletePrescriptions = new SqlCommand($"DELETE FROM Prescription WHERE IdDoctor = {id}", connection);
+        using var deleteDoctor = new SqlCommand($"DELETE FROM DOCTOR WHERE IdDoctor = {id}", connection);
+        return deletePrescriptions.ExecuteNonQuery() + deleteDoctor.ExecuteNonQuery() + del;
     }
 }

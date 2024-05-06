@@ -15,7 +15,7 @@ public class DoctorController : ControllerBase
     }
     
     [HttpGet("{id:int}")]
-    public IActionResult GetDoctors(int id)
+    public IActionResult GetDoctor(int id)
     {
         var doctor = _doctorRepository.GetDoctor(id);
         return Ok(doctor);
@@ -24,7 +24,8 @@ public class DoctorController : ControllerBase
     [HttpDelete("{id:int}")]
     public IActionResult DeleteDoctor(int id)
     {
-        var doctor = _doctorRepository.DeleteDoctor(id);
+        var affectedRows = _doctorRepository.DeleteDoctor(id);
+        Console.WriteLine("Rows affected: " + affectedRows);
         return NoContent();
     }
     
