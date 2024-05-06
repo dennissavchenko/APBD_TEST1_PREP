@@ -120,8 +120,35 @@ public class DoctorRepository : IDoctorRepository
         return doctor;
     }
 
+    private int DeleteUsages(int id)
+    {
+        using var connection = new SqlConnection(_configuration["ConnectionStrings:DefaultConnection"]);
+        connection.Open();
+        using var command = new SqlCommand($"DELETE FROM Prescription_Medicament WHERE IdPrescription = {id}", connection);
+        return command.ExecuteNonQuery();
+    }
+    private int DeletePrescriptions(int id)
+    {
+        using var connection = new SqlConnection(_configuration["ConnectionStrings:DefaultConnection"]);
+        connection.Open();
+        using var command = new SqlCommand($"SELECT * FROM Prescription WHERE IdDoctor = {id}", connection);
+        var dr = command.ExecuteReader();
+        int sum = 0;
+        while (dr.Read())
+        {
+            sum += DeleteUsages((int)dr["IdPrescription"]);
+        }
+
+        return sum;
+    }
+
     public int DeleteDoctor(int id)
     {
-        throw new NotImplementedException();
+        using var connection = new SqlConnection(_configuration["ConnectionStrings:DefaultConnection"]);
+        connection.Open();
+        int del = DeletePrescriptions(id);
+        using var command2 = new SqlCommand($"DELETE FROM Prescription WHERE IdDoctor = {id}", connection);
+        using var command1 = new SqlCommand($"DELETE FROM DOCTOR WHERE IdDoctor = {id}", connection);
+        return command2.ExecuteNonQuery() + command1.ExecuteNonQuery() + del;
     }
 }

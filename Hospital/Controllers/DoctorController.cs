@@ -21,4 +21,11 @@ public class DoctorController : ControllerBase
         return Ok(doctor);
     }
     
+    [HttpDelete("{id:int}")]
+    public IActionResult DeleteDoctor(int id)
+    {
+        var doctor = _doctorRepository.DeleteDoctor(id);
+        return NoContent();
+    }
+    
 }
