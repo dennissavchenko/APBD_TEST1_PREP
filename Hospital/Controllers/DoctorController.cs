@@ -1,3 +1,4 @@
+
 using Hospital.Repositories;
 using Microsoft.AspNetCore.Mvc;
 
@@ -24,8 +25,9 @@ public class DoctorController : ControllerBase
     [HttpDelete("{id:int}")]
     public IActionResult DeleteDoctor(int id)
     {
-        var affectedRows = _doctorRepository.DeleteDoctor(id);
-        Console.WriteLine("Rows affected: " + affectedRows);
+        var result = _doctorRepository.DeleteDoctor(id);
+        if(result == -1) return StatusCode(404);
+        if (result == -2) return StatusCode(StatusCodes.Status500InternalServerError);
         return NoContent();
     }
     

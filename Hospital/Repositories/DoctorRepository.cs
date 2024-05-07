@@ -114,20 +114,20 @@ public class DoctorRepository : IDoctorRepository
         return doctor;
     }
     
-    public async Task<int> DeleteDoctor(int id)
+    public int DeleteDoctor(int id)
     {
         using var connection = new SqlConnection(_configuration["ConnectionStrings:DefaultConnection"]);
         using var command = new SqlCommand("SELECT * FROM Prescription WHERE IdDoctor = @Id", connection);
         command.Parameters.AddWithValue("Id", id);
-        await connection.OpenAsync();
-        DbTransaction transaction = await connection.BeginTransactionAsync();
-        command.Transaction = (SqlTransaction)transaction;
+        connection.Open();
+        DbTransaction transaction = connection.BeginTransaction();
+        command.Transaction = (SqlTransaction) transaction;
         try
         {
             List<int> ids = new List<int>();
-            using (var dr = await command.ExecuteReaderAsync())
+            using (var dr = command.ExecuteReader())
             {
-                while (await dr.ReadAsync())
+                while (dr.Read())
                 {
                     ids.Add((int)dr["IdPrescription"]);
                 }
@@ -138,28 +138,28 @@ public class DoctorRepository : IDoctorRepository
             {
                 command.CommandText = "DELETE FROM Prescription_Medicament WHERE IdPrescription = @Id";
                 command.Parameters.AddWithValue("Id", el);
-                await command.ExecuteNonQueryAsync();
+                command.ExecuteNonQuery();
                 command.Parameters.Clear();
             }
 
             command.CommandText = "DELETE FROM Prescription WHERE IdDoctor = @Id";
             command.Parameters.AddWithValue("Id", id);
-            await command.ExecuteNonQueryAsync();
+            command.ExecuteNonQuery();
             command.CommandText = "DELETE FROM DOCTOR WHERE IdDoctor = @Id";
-            await command.ExecuteNonQueryAsync();
-            await transaction.CommitAsync();
+            command.ExecuteNonQuery();
+            transaction.Commit();
         }
         catch (SqlException e)
         {
             Console.WriteLine("Database error occured: " + e.Message);
-            await transaction.RollbackAsync();
+            transaction.Rollback();
             return -1;
         }
         catch (Exception e)
         {
             Console.WriteLine("Error occured: " + e.Message);
-            await transaction.RollbackAsync();
-            return -1;
+            transaction.Rollback();
+            return -2;
         }
         return 1;
     }
